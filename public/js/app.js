@@ -1,5 +1,7 @@
-import { analyze, autoEndDate, periodLength } from './cycle.js';
-import { formatDate, formatRange, isISODate, todayISO } from './dates.js';
+import { analyze, autoEndDate, periodLength, periodOn } from './cycle.js';
+import {
+  addDays, displayDate, formatDate, formatRange, fromDay, isISODate, isoFrom, parts, todayISO, weekday,
+} from './dates.js';
 
 const $ = (id) => document.getElementById(id);
 
@@ -8,6 +10,7 @@ const state = {
   analysis: analyze([], todayISO()),
   today: todayISO(),
   loadedAt: 0,
+  view: { ...parts(todayISO()) }, // the month shown on the calendar
 };
 
 /* ───────────── Talking to the server ───────────── */
@@ -112,7 +115,10 @@ document.addEventListener('visibilitychange', () => {
 /** Tiny helper for building elements: h('p', { className: 'x' }, 'text', child) */
 function h(tag, props = {}, ...children) {
   const el = document.createElement(tag);
-  Object.assign(el, props);
+  for (const [key, value] of Object.entries(props)) {
+    if (key.includes('-')) el.setAttribute(key, value);
+    else el[key] = value;
+  }
   el.append(...children.flat().filter((c) => c !== null && c !== undefined && c !== false));
   return el;
 }
@@ -123,6 +129,7 @@ function plural(n, word) {
 
 function render() {
   renderQuickCard();
+  renderCalendar();
   renderHistory();
 }
 
@@ -178,6 +185,118 @@ function renderHistory() {
   });
   list.replaceChildren(...items);
 }
+
+/* ───────────── Calendar ───────────── */
+
+// Start weeks on Sunday or Monday, whichever this browser's region uses.
+const WEEK_START = (() => {
+  try {
+    const locale = new Intl.Locale(navigator.language);
+    const info = locale.getWeekInfo?.() || locale.weekInfo;
+    if (info?.firstDay) return info.firstDay % 7;
+    const sundayRegions = ['US', 'CA', 'MX', 'BR', 'JP', 'IL', 'PH', 'KR', 'TW', 'HK', 'IN', 'ZA'];
+    return sundayRegions.includes(locale.maximize().region) ? 0 : 1;
+  } catch {
+    return 0;
+  }
+})();
+
+const SUNDAY = fromDay(3); // 1970-01-04 was a Sunday
+
+function renderWeekdays() {
+  const format = new Intl.DateTimeFormat(undefined, { weekday: 'short', timeZone: 'UTC' });
+  $('cal-weekdays').replaceChildren(
+    ...Array.from({ length: 7 }, (_, i) => h('span', {}, format.format(displayDate(addDays(SUNDAY, WEEK_START + i)))))
+  );
+}
+
+function changeMonth(step) {
+  let { y, m } = state.view;
+  m += step;
+  if (m < 1) { m = 12; y -= 1; }
+  if (m > 12) { m = 1; y += 1; }
+  state.view = { y, m };
+  renderCalendar(step);
+}
+
+function dayLabel(date, logged, predicted) {
+  const notes = [];
+  if (date === state.today) notes.push('today');
+  if (logged) notes.push(`period ${formatRange(logged.start_date, logged.end_date)}`);
+  if (predicted) notes.push('predicted period');
+  return [formatDate(date, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' }), ...notes].join(', ');
+}
+
+function renderCalendar(direction = 0) {
+  const { y, m } = state.view;
+  const first = isoFrom(y, m, 1);
+  $('cal-title').textContent = formatDate(first, { month: 'long', year: 'numeric' });
+
+  const { periods, predictions } = state.analysis;
+  const gridStart = addDays(first, -((weekday(first) - WEEK_START + 7) % 7));
+  const cells = [];
+  for (let i = 0; i < 42; i++) {
+    const date = addDays(gridStart, i);
+    const logged = periodOn(date, periods);
+    const predicted = logged ? null : periodOn(date, predictions);
+    const range = logged || predicted;
+    const clickable = Boolean(logged) || date <= state.today;
+
+    const classes = ['day'];
+    if (logged) classes.push('logged');
+    if (logged && date > state.today) classes.push('upcoming');
+    if (predicted) classes.push('predicted');
+    if (range?.start_date === date) classes.push('range-start');
+    if (range?.end_date === date) classes.push('range-end');
+    if (i % 7 === 0) classes.push('row-start');
+    if (i % 7 === 6) classes.push('row-end');
+    if (date === state.today) classes.push('today');
+    if (parts(date).m !== m) classes.push('outside');
+    if (clickable) classes.push('clickable');
+
+    let title = '';
+    if (logged) title = `Period: ${formatRange(logged.start_date, logged.end_date)}. Click to edit.`;
+    else if (predicted) title = 'Predicted period';
+    else if (clickable) title = 'Click to log a period starting this day';
+
+    const props = { className: classes.join(' '), title, 'aria-label': dayLabel(date, logged, predicted) };
+    const content = [h('span', { className: 'band' }), h('span', { className: 'num' }, String(parts(date).d))];
+    if (clickable) {
+      props.type = 'button';
+      props.onclick = () => (logged ? openPeriodDialog({ period: logged }) : openPeriodDialog({ start: date }));
+      cells.push(h('button', props, ...content));
+    } else {
+      cells.push(h('div', props, ...content));
+    }
+  }
+
+  const grid = $('cal-grid');
+  grid.replaceChildren(...cells);
+  if (direction) {
+    grid.classList.remove('slide-next', 'slide-prev');
+    void grid.offsetWidth; // restart the animation
+    grid.classList.add(direction > 0 ? 'slide-next' : 'slide-prev');
+  }
+}
+
+$('cal-prev').addEventListener('click', () => changeMonth(-1));
+$('cal-next').addEventListener('click', () => changeMonth(1));
+$('cal-today').addEventListener('click', () => {
+  const { y, m } = parts(state.today);
+  const step = Math.sign(y * 12 + m - (state.view.y * 12 + state.view.m));
+  state.view = { y, m };
+  renderCalendar(step);
+});
+
+// Left/right arrow keys flip months (when you're not typing in a box).
+document.addEventListener('keydown', (event) => {
+  if ($('app-screen').hidden || dialog.open || event.altKey || event.ctrlKey || event.metaKey) return;
+  if (event.target.closest('input, textarea, select')) return;
+  if (event.key === 'ArrowLeft') changeMonth(-1);
+  if (event.key === 'ArrowRight') changeMonth(1);
+});
+
+renderWeekdays();
 
 /* ───────────── Log / edit dialog ───────────── */
 

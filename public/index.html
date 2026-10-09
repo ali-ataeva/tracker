@@ -59,11 +59,27 @@
 
     <main class="layout">
       <section class="main-col">
-        <section class="card" aria-labelledby="history-title">
-          <div class="card-head">
-            <h2 id="history-title">Your periods</h2>
+        <section class="card calendar-card" aria-labelledby="cal-title">
+          <div class="cal-head">
+            <h2 id="cal-title" aria-live="polite"></h2>
+            <div class="cal-nav">
+              <button id="cal-today" class="btn btn-soft btn-small" type="button">Today</button>
+              <button id="cal-prev" class="icon-btn" type="button" aria-label="Previous month" title="Previous month">
+                <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M15 5l-7 7 7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+              <button id="cal-next" class="icon-btn" type="button" aria-label="Next month" title="Next month">
+                <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true"><path d="M9 5l7 7-7 7" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              </button>
+            </div>
           </div>
-          <ul id="history" class="history"></ul>
+          <div id="cal-weekdays" class="cal-weekdays" aria-hidden="true"></div>
+          <div id="cal-grid" class="cal-grid"></div>
+          <div class="legend">
+            <span><i class="swatch swatch-logged"></i>Logged period</span>
+            <span><i class="swatch swatch-predicted"></i>Predicted</span>
+            <span><i class="swatch swatch-today"></i>Today</span>
+            <span class="legend-tip">Click a date to log a period, or a logged day to edit it</span>
+          </div>
         </section>
       </section>
 
@@ -72,6 +88,13 @@
           <h2>Hello there <span aria-hidden="true">🌸</span></h2>
           <p class="muted" id="quick-hint"></p>
           <button id="log-today" class="btn btn-primary btn-wide" type="button">Log a period</button>
+        </section>
+
+        <section class="card history-card" aria-labelledby="history-title">
+          <div class="card-head">
+            <h2 id="history-title">Your periods</h2>
+          </div>
+          <ul id="history" class="history"></ul>
         </section>
       </aside>
     </main>
