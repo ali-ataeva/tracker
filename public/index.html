@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#ffeef4">
+  <title>Period Tracker</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml">
+  <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600&family=Nunito:wght@400;600;700;800&display=swap">
+  <link rel="stylesheet" href="/styles.css">
+  <script type="module" src="/js/app.js"></script>
+</head>
+<body>
+  <div class="blob blob-pink" aria-hidden="true"></div>
+  <div class="blob blob-lavender" aria-hidden="true"></div>
+  <div class="blob blob-peach" aria-hidden="true"></div>
+
+  <!-- Shown while we check whether this browser already knows the passcode -->
+  <div id="loading-screen" class="screen center-screen">
+    <img id="loading-logo" src="/favicon.svg" alt="Loading" class="bounce-logo" width="72" height="72">
+    <div id="loading-error" class="card login-card" role="alert" hidden>
+      <img src="/favicon.svg" alt="" class="login-logo" width="64" height="64">
+      <h1>Hmm, something's not right</h1>
+      <p id="loading-error-text" class="muted"></p>
+      <button id="retry" class="btn btn-primary btn-wide" type="button">Try again</button>
+    </div>
+  </div>
+
+  <!-- Passcode screen -->
+  <main id="login-screen" class="screen center-screen" hidden>
+    <form id="login-form" class="card login-card" novalidate>
+      <img src="/favicon.svg" alt="" class="login-logo" width="76" height="76">
+      <h1>Period Tracker</h1>
+      <p class="muted">Enter your shared passcode. This browser will remember it.</p>
+      <label class="field">
+        <span class="sr-only">Passcode</span>
+        <input id="passcode" name="passcode" type="password" placeholder="Passcode"
+               autocomplete="current-password" autocapitalize="off" spellcheck="false" required>
+      </label>
+      <p id="login-error" class="form-error" role="alert" hidden></p>
+      <button type="submit" class="btn btn-primary btn-wide">Unlock</button>
+    </form>
+  </main>
+
+  <!-- The app -->
+  <div id="app-screen" class="screen" hidden>
+    <header class="topbar">
+      <div class="brand">
+        <img src="/favicon.svg" alt="" width="40" height="40">
+        <span>Period Tracker</span>
+      </div>
+      <button id="logout" class="btn btn-ghost btn-small" type="button">Log out</button>
+    </header>
+
+    <main class="layout">
+      <section class="main-col">
+        <section class="card" aria-labelledby="history-title">
+          <div class="card-head">
+            <h2 id="history-title">Your periods</h2>
+          </div>
+          <ul id="history" class="history"></ul>
+        </section>
+      </section>
+
+      <aside class="side-col">
+        <section class="card quick-card">
+          <h2>Hello there <span aria-hidden="true">🌸</span></h2>
+          <p class="muted" id="quick-hint"></p>
+          <button id="log-today" class="btn btn-primary btn-wide" type="button">Log a period</button>
+        </section>
+      </aside>
+    </main>
+  </div>
+
+  <dialog id="period-dialog" class="dialog">
+    <form id="period-form" class="period-form" novalidate>
+      <h2 id="period-form-title">Log a period</h2>
+      <div class="date-row">
+        <label class="field">
+          <span>Started on</span>
+          <input id="start-date" type="date" required>
+        </label>
+        <label class="field">
+          <span>Ended on</span>
+          <input id="end-date" type="date" required>
+        </label>
+      </div>
+      <p id="end-hint" class="hint"></p>
+      <label class="check">
+        <input id="end-confirmed" type="checkbox">
+        <span>The end date is confirmed</span>
+      </label>
+      <p id="period-error" class="form-error" role="alert" hidden></p>
+      <div class="dialog-actions">
+        <button id="delete-period" class="btn btn-danger" type="button" hidden>Delete</button>
+        <span class="spacer"></span>
+        <button id="cancel-period" class="btn btn-ghost" type="button">Cancel</button>
+        <button id="save-period" class="btn btn-primary" type="submit">Save</button>
+      </div>
+    </form>
+  </dialog>
+
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+</body>
+</html>
