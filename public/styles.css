@@ -26,7 +26,7 @@
   --shadow: 0 14px 34px -16px rgba(186, 92, 140, 0.32), 0 2px 6px rgba(186, 92, 140, 0.06);
   --shadow-lift: 0 18px 40px -16px rgba(186, 92, 140, 0.42), 0 3px 8px rgba(186, 92, 140, 0.08);
   --font-body: 'Nunito', ui-rounded, 'Segoe UI', system-ui, sans-serif;
-  --font-display: 'Fredoka', 'Nunito', ui-rounded, system-ui, sans-serif;
+  --font-display: 'Baloo 2', 'Nunito', ui-rounded, system-ui, sans-serif;
   --ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -60,7 +60,7 @@ h1,
 h2,
 h3 {
   font-family: var(--font-display);
-  font-weight: 500;
+  font-weight: 600;
   line-height: 1.2;
   margin: 0;
 }
@@ -275,7 +275,7 @@ input {
   align-items: center;
   gap: 12px;
   font-family: var(--font-display);
-  font-weight: 600;
+  font-weight: 700;
   font-size: 1.6rem;
   color: var(--pink-ink);
 }
@@ -354,7 +354,7 @@ input {
   background: var(--pink-100);
   color: var(--pink-ink);
   font-family: var(--font-display);
-  font-weight: 600;
+  font-weight: 700;
   font-size: 1.15rem;
 }
 .history-badge small {
@@ -400,7 +400,7 @@ input {
 .empty strong {
   display: block;
   font-family: var(--font-display);
-  font-weight: 500;
+  font-weight: 600;
   font-size: 1.15rem;
   color: var(--ink);
   margin-bottom: 4px;
@@ -419,8 +419,12 @@ input {
 }
 .cal-head h2 {
   font-size: 1.85rem;
-  font-weight: 600;
+  font-weight: 700;
   color: var(--pink-ink);
+}
+/* Some languages write month names in lowercase ("září"); a heading reads better capitalised. */
+.cal-head h2::first-letter {
+  text-transform: uppercase;
 }
 .cal-nav {
   display: flex;
