@@ -81,6 +81,15 @@
             <span class="legend-tip">Click a date to log a period, or a logged day to edit it</span>
           </div>
         </section>
+
+        <section class="card history-card" aria-labelledby="history-title">
+          <div class="card-head">
+            <h2 id="history-title">Your periods</h2>
+            <span id="history-count" class="muted"></span>
+          </div>
+          <ul id="history" class="history"></ul>
+          <button id="history-toggle" class="btn btn-soft btn-small history-toggle" type="button" hidden></button>
+        </section>
       </section>
 
       <aside class="side-col">
@@ -125,12 +134,6 @@
           <p id="stats-note" class="stats-note"></p>
         </section>
 
-        <section class="card history-card" aria-labelledby="history-title">
-          <div class="card-head">
-            <h2 id="history-title">Your periods</h2>
-          </div>
-          <ul id="history" class="history"></ul>
-        </section>
       </aside>
     </main>
   </div>

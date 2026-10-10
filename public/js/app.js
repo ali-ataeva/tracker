@@ -170,8 +170,8 @@ function renderCountdown() {
     text.number = String(status.daysLate);
     text.unit = status.daysLate === 1 ? 'day late' : 'days late';
     text.headline = 'Your period is running late';
-    text.detail = `It was expected on ${longDate(status.expected)}.`;
-    if (status.daysLate > 10) text.detail += ' Forgot to log one? Click its start date on the calendar.';
+    text.detail = `It was expected on ${longDate(status.expected)}`;
+    if (status.daysLate > 10) text.detail += '\nForgot to log one? Click its start date on the calendar.';
     fill = 1;
   } else if (status.daysUntil === 0) {
     text.number = 'Today';
@@ -276,7 +276,7 @@ function renderPrompt() {
       return Object.assign(error, { textContent: "It can't end before it started.", hidden: false });
     }
     if (end > latestEnd) {
-      return Object.assign(error, { textContent: `Please pick a date up to ${longDate(latestEnd)}.`, hidden: false });
+      return Object.assign(error, { textContent: `Please pick a date no later than ${longDate(latestEnd)}`, hidden: false });
     }
     answer({ end_date: end, end_confirmed: true }, 'Thanks! End date saved 💕');
   });
@@ -346,9 +346,21 @@ function renderStats() {
       : 'Cycles over 60 days are left out, since they probably mean a period wasn’t logged.');
 }
 
+const HISTORY_PREVIEW = 8;
+let showAllHistory = false;
+
+$('history-toggle').addEventListener('click', () => {
+  showAllHistory = !showAllHistory;
+  renderHistory();
+});
+
 function renderHistory() {
   const list = $('history');
   const { periods, cycles } = state.analysis;
+  const toggle = $('history-toggle');
+  $('history-count').textContent = periods.length ? `${periods.length} logged` : '';
+  toggle.hidden = periods.length <= HISTORY_PREVIEW;
+  toggle.textContent = showAllHistory ? 'Show fewer' : `Show all ${periods.length}`;
   if (periods.length === 0) {
     list.replaceChildren(
       h('li', { className: 'empty' }, h('strong', {}, 'Nothing logged yet'), 'Use “Log a period” to add your first one.')
@@ -357,7 +369,9 @@ function renderHistory() {
   }
 
   const cycleFrom = new Map(cycles.map((c) => [c.from.id, c]));
-  const items = [...periods].reverse().map((period) => {
+  const newestFirst = [...periods].reverse();
+  const shown = showAllHistory ? newestFirst : newestFirst.slice(0, HISTORY_PREVIEW);
+  const items = shown.map((period) => {
     const days = periodLength(period);
     const cycle = cycleFrom.get(period.id);
     const ongoing = period.start_date <= state.today && state.today <= period.end_date;
