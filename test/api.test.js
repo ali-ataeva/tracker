@@ -112,3 +112,36 @@ test('changing the passcode logs everyone out', async () => {
   process.env.APP_PASSCODE = 'sunflower seeds';
   assert.equal((await call(periods.GET)).status, 200);
 });
+
+test('backup download needs the passcode and contains every period', async () => {
+  const exporter = await import('../api/export.js');
+  const saved = cookie;
+  cookie = '';
+  assert.equal((await call(exporter.GET)).status, 401);
+  cookie = saved;
+
+  const res = await call(exporter.GET);
+  assert.equal(res.status, 200);
+  assert.match(res.headers.get('content-type'), /text\/csv/);
+  assert.match(res.headers.get('content-disposition'), /attachment; filename="period-tracker-backup-\d{4}-\d{2}-\d{2}\.csv"/);
+  const lines = (await res.text()).trim().split('\r\n');
+  assert.equal(lines[0], 'start_date,end_date,end_confirmed');
+  const { periods: all } = await (await call(periods.GET)).json();
+  assert.equal(lines.length, all.length + 1);
+  assert.ok(lines.includes('2026-08-01,2026-08-05,true'));
+});
+
+test('keep-awake check touches the database but returns no data', async () => {
+  const keepalive = await import('../api/keepalive.js');
+  const saved = cookie;
+  cookie = '';
+  const res = await call(keepalive.GET);
+  assert.equal(res.status, 200);
+  assert.deepEqual(await res.json(), { ok: true });
+
+  process.env.CRON_SECRET = 'only-vercel-knows';
+  assert.equal((await call(keepalive.GET)).status, 401);
+  assert.equal((await call(keepalive.GET, { headers: { authorization: 'Bearer only-vercel-knows' } })).status, 200);
+  delete process.env.CRON_SECRET;
+  cookie = saved;
+});

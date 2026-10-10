@@ -195,6 +195,7 @@ function renderCountdown() {
   $('countdown-headline').textContent = text.headline;
   $('countdown-detail').textContent = text.detail;
   $('ring-fill').style.strokeDasharray = `${Math.max(0, Math.min(1, fill)) * 100} 100`;
+  $('ring-fill').classList.toggle('is-empty', fill <= 0);
   $('log-today').textContent = status.kind === 'period' ? 'Edit this period' : 'Log a period';
 }
 

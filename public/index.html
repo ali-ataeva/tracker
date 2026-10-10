@@ -9,6 +9,7 @@
   <link rel="icon" href="/favicon.svg" type="image/svg+xml">
   <link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
   <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+  <link rel="manifest" href="/manifest.webmanifest">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;600;700&family=Nunito:wght@400;600;700;800&display=swap">
@@ -19,6 +20,10 @@
   <div class="blob blob-pink" aria-hidden="true"></div>
   <div class="blob blob-lavender" aria-hidden="true"></div>
   <div class="blob blob-peach" aria-hidden="true"></div>
+
+  <noscript>
+    <p class="noscript">Period Tracker needs JavaScript turned on in your browser.</p>
+  </noscript>
 
   <!-- Shown while we check whether this browser already knows the passcode -->
   <div id="loading-screen" class="screen center-screen">
@@ -54,7 +59,14 @@
         <img src="/favicon.svg" alt="" width="40" height="40">
         <span>Period Tracker</span>
       </div>
-      <button id="logout" class="btn btn-ghost btn-small" type="button">Log out</button>
+      <nav class="topbar-actions">
+        <a id="backup" class="btn btn-ghost btn-small" href="/api/export" download
+           aria-label="Download backup" title="Save all your periods as a spreadsheet file (CSV)">
+          <svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path d="M12 4v11m0 0l-4.5-4.5M12 15l4.5-4.5M5 19h14" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="btn-label">Download backup</span>
+        </a>
+        <button id="logout" class="btn btn-ghost btn-small" type="button">Log out</button>
+      </nav>
     </header>
 
     <main class="layout">

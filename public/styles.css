@@ -270,6 +270,23 @@ input {
   align-items: center;
   justify-content: space-between;
 }
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.noscript {
+  max-width: 420px;
+  margin: 40px auto;
+  padding: 16px 20px;
+  border-radius: var(--radius-small);
+  background: var(--card);
+  text-align: center;
+  font-weight: 700;
+}
+a.btn {
+  text-decoration: none;
+}
 .brand {
   display: flex;
   align-items: center;
@@ -351,6 +368,9 @@ input {
   stroke-linecap: round;
   stroke-dasharray: 0 100;
   transition: stroke-dasharray 1s var(--ease), stroke 0.4s;
+}
+.ring-fill.is-empty {
+  opacity: 0;
 }
 .ring-center {
   position: absolute;
@@ -928,6 +948,9 @@ input {
     width: 32px;
     height: 32px;
   }
+  .topbar-actions .btn {
+    padding: 7px 12px;
+  }
   /* One column: the cards are ordered one by one instead of by column. */
   .layout {
     display: flex;
@@ -966,6 +989,9 @@ input {
 }
 
 @media (max-width: 600px) {
+  #backup .btn-label {
+    display: none;
+  }
   .day {
     --band-height: 36px;
     --num-size: 32px;
