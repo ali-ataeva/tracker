@@ -310,12 +310,182 @@ input {
   margin-bottom: 14px;
 }
 
-.quick-card {
+.countdown-card {
+  --ring: var(--lavender-400);
+  --ring-track: var(--lavender-100);
   display: grid;
+  justify-items: center;
+  text-align: center;
+  gap: 4px;
+  padding-top: 28px;
+}
+.countdown-card[data-mood='period'] {
+  --ring: var(--pink-400);
+  --ring-track: var(--pink-100);
+}
+.countdown-card[data-mood='late'] {
+  --ring: var(--peach-400);
+  --ring-track: var(--peach-100);
+}
+.ring-wrap {
+  position: relative;
+  width: 184px;
+  height: 184px;
+  margin-bottom: 10px;
+}
+.ring {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+.ring circle {
+  fill: none;
+  stroke-width: 11;
+}
+.ring-track {
+  stroke: var(--ring-track);
+}
+.ring-fill {
+  stroke: var(--ring);
+  stroke-linecap: round;
+  stroke-dasharray: 0 100;
+  transition: stroke-dasharray 1s var(--ease), stroke 0.4s;
+}
+.ring-center {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  line-height: 1;
+}
+.countdown-number {
+  font-size: 3.6rem;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.countdown-number.is-word {
+  font-size: 2rem;
+}
+.countdown-number:empty,
+.countdown-small:empty {
+  display: none;
+}
+.countdown-small {
+  margin: 4px 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+.ring-center img {
+  animation: bob 3s ease-in-out infinite;
+}
+.countdown-headline {
+  font-size: 1.35rem;
+}
+.countdown-detail {
+  margin: 0 0 14px;
+  color: var(--ink-soft);
+}
+
+.prompts {
+  display: grid;
+  gap: 24px;
+}
+.prompt-card {
+  position: relative;
+  display: grid;
+  gap: 10px;
+  background: linear-gradient(160deg, #fff, var(--peach-100));
+  border: 2px solid var(--peach-200);
+  animation: rise 0.6s var(--ease) both, nudge 0.8s 0.7s ease;
+}
+.prompt-card h2 {
+  font-size: 1.3rem;
+  padding-right: 36px;
+}
+.prompt-card p {
+  margin: 0;
+}
+.prompt-flower {
+  position: absolute;
+  top: 18px;
+  right: 20px;
+  font-size: 1.6rem;
+  animation: bob 3s ease-in-out infinite;
+}
+.prompt-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 4px;
+}
+.prompt-pick {
+  display: grid;
+  gap: 8px;
+}
+.prompt-more {
+  font-size: 0.88rem;
+  color: var(--ink-soft);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 12px;
 }
-.quick-card p {
+.stat {
+  border-radius: 20px;
+  padding: 16px 16px 14px;
+}
+.stat p {
   margin: 0;
+}
+.stat-cycle {
+  background: var(--lavender-100);
+}
+.stat-period {
+  background: var(--pink-50);
+}
+.stat-label {
+  font-size: 0.92rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+.stat-value {
+  margin: 2px 0 6px !important;
+  font-size: 2.1rem;
+  font-weight: 800;
+  line-height: 1.1;
+  color: var(--ink);
+}
+.stat-unit {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--ink-soft);
+}
+.stat-range,
+.stat-count {
+  font-size: 0.86rem;
+  color: var(--ink-soft);
+}
+.stat-range {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+  font-weight: 700;
+}
+.stat-range span {
+  white-space: nowrap;
+}
+.stat-range b {
+  color: var(--ink);
+}
+.stats-note {
+  margin: 14px 2px 0;
+  font-size: 0.86rem;
+  color: var(--ink-soft);
 }
 
 /* ───────────── History list ───────────── */
@@ -719,6 +889,11 @@ input {
   from { opacity: 0; transform: translateX(-24px); }
   to { opacity: 1; transform: none; }
 }
+@keyframes nudge {
+  0%, 100% { transform: rotate(0); }
+  25% { transform: rotate(-0.8deg); }
+  75% { transform: rotate(0.8deg); }
+}
 @keyframes glow {
   0%, 100% { box-shadow: 0 0 0 3px var(--peach-400); }
   50% { box-shadow: 0 0 0 3px var(--peach-400), 0 0 0 7px rgba(255, 180, 136, 0.25); }
@@ -754,6 +929,7 @@ input {
   .layout {
     display: flex;
     flex-direction: column;
+    align-items: stretch;
     padding: 8px 16px 32px;
     gap: 18px;
   }
@@ -761,9 +937,11 @@ input {
   .side-col {
     display: contents;
   }
-  .quick-card { order: 1; }
-  .calendar-card { order: 2; }
-  .history-card { order: 3; }
+  .countdown-card { order: 1; }
+  .prompts { order: 2; gap: 18px; }
+  .calendar-card { order: 3; }
+  .stats-card { order: 4; }
+  .history-card { order: 5; }
   .card {
     padding: 20px 18px;
   }

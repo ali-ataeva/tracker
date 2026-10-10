@@ -1,6 +1,7 @@
 import { analyze, autoEndDate, periodLength, periodOn } from './cycle.js';
 import {
-  addDays, displayDate, formatDate, formatRange, fromDay, isISODate, isoFrom, parts, todayISO, weekday,
+  addDays, daysBetween, displayDate, formatDate, formatRange, fromDay, isISODate, isoFrom, ordinal, parts,
+  todayISO, weekday,
 } from './dates.js';
 
 const $ = (id) => document.getElementById(id);
@@ -104,6 +105,11 @@ $('retry').addEventListener('click', () => {
   load();
 });
 
+// If the page stays open past midnight, move "today" along.
+setInterval(() => {
+  if (!$('app-screen').hidden && todayISO() !== state.today) setPeriods(state.periods);
+}, 60_000);
+
 // When you come back to the tab, pick up anything the other person changed.
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState !== 'visible' || $('app-screen').hidden) return;
@@ -116,7 +122,7 @@ document.addEventListener('visibilitychange', () => {
 function h(tag, props = {}, ...children) {
   const el = document.createElement(tag);
   for (const [key, value] of Object.entries(props)) {
-    if (key.includes('-')) el.setAttribute(key, value);
+    if (key.includes('-') || key === 'role') el.setAttribute(key, value);
     else el[key] = value;
   }
   el.append(...children.flat().filter((c) => c !== null && c !== undefined && c !== false));
@@ -128,16 +134,216 @@ function plural(n, word) {
 }
 
 function render() {
-  renderQuickCard();
+  renderCountdown();
+  renderPrompt();
+  renderStats();
   renderCalendar();
   renderHistory();
 }
 
-function renderQuickCard() {
-  const { periodLength: predicted, periodStats } = state.analysis;
-  $('quick-hint').textContent = periodStats
-    ? `New entries end automatically after ${plural(predicted, 'day')}, your average period length.`
-    : `New entries end automatically after ${plural(predicted, 'day')} until you've confirmed a few real end dates.`;
+/* ───────────── Countdown ───────────── */
+
+const longDate = (iso) => formatDate(iso, { weekday: 'short', month: 'short', day: 'numeric' });
+
+function renderCountdown() {
+  const { status, cycleLength } = state.analysis;
+  const card = $('countdown-card');
+  const text = { pre: '', number: '', unit: '', headline: '', detail: '' };
+  let fill = 0;
+  let mood = 'cycle';
+
+  if (status.kind === 'empty') {
+    text.headline = 'Welcome!';
+    text.detail = 'Log your first period and your countdown and predictions will appear here.';
+  } else if (status.kind === 'period') {
+    const { period, day } = status;
+    mood = 'period';
+    text.pre = 'Day';
+    text.number = String(day);
+    text.headline = 'of your period';
+    if (period.end_date === state.today) text.detail = 'Expected to be the last day';
+    else if (period.end_confirmed) text.detail = `Ends ${longDate(period.end_date)}`;
+    else text.detail = `Expected to end ${longDate(period.end_date)}`;
+    fill = day / periodLength(period);
+  } else if (status.kind === 'late') {
+    mood = 'late';
+    text.number = String(status.daysLate);
+    text.unit = status.daysLate === 1 ? 'day late' : 'days late';
+    text.headline = 'Your period is running late';
+    text.detail = `It was expected on ${longDate(status.expected)}.`;
+    if (status.daysLate > 10) text.detail += ' Forgot to log one? Click its start date on the calendar.';
+    fill = 1;
+  } else if (status.daysUntil === 0) {
+    text.number = 'Today';
+    text.headline = 'Your period is expected today';
+    text.detail = 'Log it when it starts 🌸';
+    fill = 1;
+  } else {
+    text.number = String(status.daysUntil);
+    text.unit = status.daysUntil === 1 ? 'day' : 'days';
+    text.headline = 'until your next period';
+    text.detail = `Expected around ${longDate(status.expected)}`;
+    fill = (cycleLength - status.daysUntil) / cycleLength;
+  }
+
+  card.dataset.mood = mood;
+  $('countdown-pre').textContent = text.pre;
+  $('countdown-number').textContent = text.number;
+  $('countdown-number').classList.toggle('is-word', Number.isNaN(Number(text.number)));
+  $('countdown-unit').textContent = text.unit;
+  $('countdown-logo').hidden = status.kind !== 'empty';
+  $('countdown-headline').textContent = text.headline;
+  $('countdown-detail').textContent = text.detail;
+  $('ring-fill').style.strokeDasharray = `${Math.max(0, Math.min(1, fill)) * 100} 100`;
+  $('log-today').textContent = status.kind === 'period' ? 'Edit this period' : 'Log a period';
+}
+
+/* ───────────── "Did your period end on the 14th?" ───────────── */
+
+function renderPrompt() {
+  const box = $('prompts');
+  const waiting = state.analysis.needsEndConfirmation;
+  if (waiting.length === 0) {
+    box.hidden = true;
+    box.replaceChildren();
+    return;
+  }
+  // One question at a time, newest first.
+  const period = waiting[waiting.length - 1];
+  const later = state.analysis.periods.find((p) => p.start_date > period.start_date);
+  const latestEnd = later ? addDays(later.start_date, -1) : state.today;
+  const canStillBeGoing = !later && daysBetween(period.end_date, state.today) <= 7;
+
+  const error = h('p', { className: 'form-error', role: 'alert', hidden: true });
+  const dateInput = h('input', { type: 'date', value: period.end_date, min: period.start_date, max: latestEnd, required: true });
+  const buttons = h('div', { className: 'prompt-actions' });
+  const pickForm = h(
+    'form',
+    { className: 'prompt-pick', hidden: true, noValidate: true },
+    h('label', { className: 'field' }, h('span', {}, 'It ended on'), dateInput),
+    h(
+      'div',
+      { className: 'prompt-actions' },
+      h('button', { type: 'submit', className: 'btn btn-primary btn-small' }, 'Save'),
+      h('button', { type: 'button', className: 'btn btn-ghost btn-small', onclick: () => togglePick(false) }, 'Cancel')
+    )
+  );
+
+  function togglePick(open) {
+    pickForm.hidden = !open;
+    buttons.hidden = open;
+    error.hidden = true;
+    if (open) dateInput.focus();
+  }
+
+  async function answer(changes, message) {
+    for (const b of box.querySelectorAll('button')) b.disabled = true;
+    try {
+      await api(`/api/periods?id=${encodeURIComponent(period.id)}`, { method: 'PATCH', body: changes });
+      toast(message);
+      await load({ quiet: true });
+    } catch (err) {
+      error.textContent = err.message;
+      error.hidden = false;
+      for (const b of box.querySelectorAll('button')) b.disabled = false;
+    }
+  }
+
+  buttons.append(
+    h('button', {
+      type: 'button',
+      className: 'btn btn-primary btn-small',
+      onclick: () => answer({ end_confirmed: true }, 'Thanks! Noted 💕'),
+    }, 'Yes, it did'),
+    h('button', { type: 'button', className: 'btn btn-soft btn-small', onclick: () => togglePick(true) }, 'No, pick the date')
+  );
+  if (canStillBeGoing) {
+    buttons.append(
+      h('button', {
+        type: 'button',
+        className: 'btn btn-ghost btn-small',
+        title: "We'll check again tomorrow",
+        onclick: () => answer({ end_date: state.today, end_confirmed: false }, "Okay, we'll check again tomorrow 🌷"),
+      }, 'Still going')
+    );
+  }
+
+  pickForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const end = dateInput.value;
+    if (!isISODate(end)) return Object.assign(error, { textContent: 'Please pick a date.', hidden: false });
+    if (end < period.start_date) {
+      return Object.assign(error, { textContent: "It can't end before it started.", hidden: false });
+    }
+    if (end > latestEnd) {
+      return Object.assign(error, { textContent: `Please pick a date up to ${longDate(latestEnd)}.`, hidden: false });
+    }
+    answer({ end_date: end, end_confirmed: true }, 'Thanks! End date saved 💕');
+  });
+
+  box.replaceChildren(
+    h(
+      'section',
+      { className: 'card prompt-card', 'aria-label': 'Confirm when your period ended' },
+      h('span', { className: 'prompt-flower', 'aria-hidden': 'true' }, '🌷'),
+      h('h2', {}, `Did your period end on the ${ordinal(parts(period.end_date).d)}?`),
+      h(
+        'p',
+        { className: 'muted' },
+        `Logged ${formatRange(period.start_date, period.end_date)}. The end date was filled in automatically.`
+      ),
+      buttons,
+      pickForm,
+      error,
+      waiting.length > 1
+        ? h('p', { className: 'prompt-more' }, `${waiting.length - 1} older ${waiting.length === 2 ? 'one' : 'ones'} to check after this.`)
+        : null
+    )
+  );
+  box.hidden = false;
+}
+
+/* ───────────── Stats ───────────── */
+
+const oneDecimal = new Intl.NumberFormat(undefined, { maximumFractionDigits: 1 });
+
+function showRange(id, stats) {
+  $(id).replaceChildren(
+    h('span', {}, 'Shortest ', h('b', {}, String(stats.shortest))),
+    h('span', {}, 'Longest ', h('b', {}, String(stats.longest)))
+  );
+}
+
+function renderStats() {
+  const { cycleStats, periodStats, cycleLength, periodLength: predictedPeriod, periods, cycles } = state.analysis;
+
+  if (cycleStats) {
+    $('stat-cycle-avg').textContent = oneDecimal.format(cycleStats.average);
+    showRange('stat-cycle-range', cycleStats);
+    $('stat-cycle-count').textContent = `Based on ${plural(cycleStats.count, 'cycle')}`;
+  } else {
+    $('stat-cycle-avg').textContent = String(cycleLength);
+    $('stat-cycle-range').textContent = 'Default for now';
+    $('stat-cycle-count').textContent =
+      periods.length < 2 ? 'Log 2 periods to start averaging' : 'No cycles of 60 days or less yet';
+  }
+
+  if (periodStats) {
+    $('stat-period-avg').textContent = oneDecimal.format(periodStats.average);
+    showRange('stat-period-range', periodStats);
+    $('stat-period-count').textContent = `Based on ${plural(periodStats.count, 'confirmed period')}`;
+  } else {
+    $('stat-period-avg').textContent = String(predictedPeriod);
+    $('stat-period-range').textContent = 'Default for now';
+    $('stat-period-count').textContent = 'Confirm an end date to start averaging';
+  }
+
+  const skipped = cycles.filter((c) => !c.counted).length;
+  $('stats-note').textContent =
+    `Predictions use a ${cycleLength}-day cycle and a ${predictedPeriod}-day period. ` +
+    (skipped
+      ? `${plural(skipped, 'cycle')} over 60 days ${skipped === 1 ? 'is' : 'are'} left out (probably a missed log).`
+      : 'Cycles over 60 days are left out, since they probably mean a period wasn’t logged.');
 }
 
 function renderHistory() {
@@ -427,7 +633,11 @@ deleteButton.addEventListener('click', async () => {
   }
 });
 
-$('log-today').addEventListener('click', () => openPeriodDialog());
+$('log-today').addEventListener('click', () => {
+  const { status } = state.analysis;
+  if (status.kind === 'period') openPeriodDialog({ period: status.period });
+  else openPeriodDialog();
+});
 
 /* ───────────── Little pop-up messages ───────────── */
 

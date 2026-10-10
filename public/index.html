@@ -84,10 +84,45 @@
       </section>
 
       <aside class="side-col">
-        <section class="card quick-card">
-          <h2>Hello there <span aria-hidden="true">🌸</span></h2>
-          <p class="muted" id="quick-hint"></p>
+        <section id="countdown-card" class="card countdown-card" aria-labelledby="countdown-headline">
+          <div class="ring-wrap">
+            <svg class="ring" viewBox="0 0 120 120" aria-hidden="true">
+              <circle class="ring-track" cx="60" cy="60" r="52" pathLength="100"/>
+              <circle id="ring-fill" class="ring-fill" cx="60" cy="60" r="52" pathLength="100"/>
+            </svg>
+            <div class="ring-center">
+              <span id="countdown-pre" class="countdown-small"></span>
+              <span id="countdown-number" class="countdown-number"></span>
+              <img id="countdown-logo" src="/favicon.svg" alt="" width="64" height="64" hidden>
+              <span id="countdown-unit" class="countdown-small"></span>
+            </div>
+          </div>
+          <h2 id="countdown-headline" class="countdown-headline"></h2>
+          <p id="countdown-detail" class="countdown-detail"></p>
           <button id="log-today" class="btn btn-primary btn-wide" type="button">Log a period</button>
+        </section>
+
+        <div id="prompts" class="prompts" hidden></div>
+
+        <section class="card stats-card" aria-labelledby="stats-title">
+          <div class="card-head">
+            <h2 id="stats-title">Your stats</h2>
+          </div>
+          <div class="stats-grid">
+            <div class="stat stat-cycle">
+              <p class="stat-label">Average cycle</p>
+              <p class="stat-value"><span id="stat-cycle-avg"></span> <span class="stat-unit">days</span></p>
+              <p id="stat-cycle-range" class="stat-range"></p>
+              <p id="stat-cycle-count" class="stat-count"></p>
+            </div>
+            <div class="stat stat-period">
+              <p class="stat-label">Average period</p>
+              <p class="stat-value"><span id="stat-period-avg"></span> <span class="stat-unit">days</span></p>
+              <p id="stat-period-range" class="stat-range"></p>
+              <p id="stat-period-count" class="stat-count"></p>
+            </div>
+          </div>
+          <p id="stats-note" class="stats-note"></p>
         </section>
 
         <section class="card history-card" aria-labelledby="history-title">

@@ -92,3 +92,11 @@ test('auto end date stops before the next logged period', () => {
   assert.equal(autoEndDate('2026-08-01', periods, 5), '2026-08-05');
   assert.equal(autoEndDate('2026-09-07', periods, 5), '2026-09-09');
 });
+
+test('falls back to 28 days when every cycle is too long to count', () => {
+  const a = analyze([period('2026-01-01', '2026-01-05'), period('2026-04-01', '2026-04-05')], '2026-04-10');
+  assert.equal(a.cycleStats, null);
+  assert.equal(a.cycleLength, 28);
+  assert.equal(a.cycles[0].counted, false);
+  assert.deepEqual(a.status, { kind: 'upcoming', daysUntil: 19, expected: '2026-04-29' });
+});
